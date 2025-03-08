@@ -318,38 +318,71 @@ func evaluateBatch(batch []string, offerEngines []string, resultChan chan<- engi
 
 // **parseEngineCode** haalt de engine code uit invoer
 func parseEngineCode(input string) string {
-	engine := strings.TrimSpace(input)
-
-	// Controleer de eerste 12 tekens voor een diepte-engine
-	if len(engine) >= 12 {
-		potentialDepth := engine[:12]
-		isDepth := true
-		for _, char := range potentialDepth {
-			if char < '1' || char > '5' {
-				isDepth = false
-				break
+	// Splits de input op dubbele punten
+	parts := strings.Split(input, ":")
+	if len(parts) > 2 {
+		// Neem het deel na het tweede dubbele punt
+		engine := strings.TrimSpace(parts[2])
+		// Controleer of het een geldige diepte-engine is (12 tekens, 1-5)
+		if len(engine) >= 12 {
+			potentialDepth := engine[:12]
+			isDepth := true
+			for _, char := range potentialDepth {
+				if char < '1' || char > '5' {
+					isDepth = false
+					break
+				}
+			}
+			if isDepth {
+				return potentialDepth
 			}
 		}
-		if isDepth {
-			return potentialDepth // Neemt alleen de eerste 12 tekens als het een geldige diepte-engine is
-		}
-	}
-
-	// Controleer of het een geldige vaste engine is (exact 13 tekens, alleen W, V, A, L, D)
-	if len(engine) >= 13 {
-		potentialFixed := engine[:13]
-		isFixed := len(potentialFixed) == 13
-		for _, char := range potentialFixed {
-			if !strings.ContainsRune("WVALD", char) {
-				isFixed = false
-				break
+		// Controleer of het een geldige vaste engine is (13 tekens, W, V, A, L, D)
+		if len(engine) >= 13 {
+			potentialFixed := engine[:13]
+			isFixed := true
+			for _, char := range potentialFixed {
+				if !strings.ContainsRune("WVALD", char) {
+					isFixed = false
+					break
+				}
+			}
+			if isFixed {
+				return potentialFixed
 			}
 		}
-		if isFixed {
-			return potentialFixed
+	} else {
+		// Als er geen twee dubbele punten zijn, behandel de input als een directe engine code
+		engine := strings.TrimSpace(input)
+		// Controleer voor diepte-engine
+		if len(engine) >= 12 {
+			potentialDepth := engine[:12]
+			isDepth := true
+			for _, char := range potentialDepth {
+				if char < '1' || char > '5' {
+					isDepth = false
+					break
+				}
+			}
+			if isDepth {
+				return potentialDepth
+			}
+		}
+		// Controleer voor vaste engine
+		if len(engine) >= 13 {
+			potentialFixed := engine[:13]
+			isFixed := true
+			for _, char := range potentialFixed {
+				if !strings.ContainsRune("WVALD", char) {
+					isFixed = false
+					break
+				}
+			}
+			if isFixed {
+				return potentialFixed
+			}
 		}
 	}
-
 	// Ongeldige engine code
 	return ""
 }
