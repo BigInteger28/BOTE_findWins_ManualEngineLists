@@ -318,15 +318,40 @@ func evaluateBatch(batch []string, offerEngines []string, resultChan chan<- engi
 
 // **parseEngineCode** haalt de engine code uit invoer
 func parseEngineCode(input string) string {
-	parts := strings.Split(input, ":")
 	engine := strings.TrimSpace(input)
-	if len(parts) > 2 {
-		engine = strings.TrimSpace(parts[2])
+
+	// Controleer de eerste 12 tekens voor een diepte-engine
+	if len(engine) >= 12 {
+		potentialDepth := engine[:12]
+		isDepth := true
+		for _, char := range potentialDepth {
+			if char < '1' || char > '5' {
+				isDepth = false
+				break
+			}
+		}
+		if isDepth {
+			return potentialDepth // Neemt alleen de eerste 12 tekens als het een geldige diepte-engine is
+		}
 	}
-	if len(engine) > 12 && strings.ContainsAny(engine, "12345") && !strings.ContainsAny(engine, "WVALD") {
-		return engine[:12]
+
+	// Controleer of het een geldige vaste engine is (exact 13 tekens, alleen W, V, A, L, D)
+	if len(engine) >= 13 {
+		potentialFixed := engine[:13]
+		isFixed := len(potentialFixed) == 13
+		for _, char := range potentialFixed {
+			if !strings.ContainsRune("WVALD", char) {
+				isFixed = false
+				break
+			}
+		}
+		if isFixed {
+			return potentialFixed
+		}
 	}
-	return engine
+
+	// Ongeldige engine code
+	return ""
 }
 
 func main() {
