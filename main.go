@@ -288,11 +288,15 @@ func evaluateBatch(batch []string, offerEngines []string, resultChan chan<- engi
 			if p1Score == -1 || p2Score == -1 {
 				continue
 			}
-			totalScore += p1Score - p2Score
-			if p1Score < p2Score {
-				neverLoses = false
-			} else if p1Score > p2Score {
+			diff := p1Score - p2Score
+			if p1Score > p2Score {
+				totalScore += diff + 10
 				wins++
+			} else if p1Score < p2Score {
+				totalScore += diff - 10
+				neverLoses = false
+			} else {
+				totalScore += p1Score
 			}
 
 			// Update voortgang
@@ -366,6 +370,7 @@ func parseEngineCode(input string) string {
 			}
 			if isDepth {
 				return potentialDepth
+
 			}
 		}
 		// Controleer voor vaste engine
@@ -391,7 +396,7 @@ func main() {
 	for {
 		// Lees input engines
 		var inputEngines []string
-		fmt.Println("Voer input engine codes in (één per regel, '.' om te stoppen):")
+		fmt.Println("Voer input engine codes in die beoordeeld moeten worden (één per regel, '.' om te stoppen):")
 		scanner := bufio.NewScanner(os.Stdin)
 		for scanner.Scan() {
 			input := strings.TrimSpace(scanner.Text())
@@ -414,7 +419,7 @@ func main() {
 
 		// Lees offer engines
 		var offerEngines []string
-		fmt.Println("Voer offer engine codes in (één per regel, '.' om te stoppen):")
+		fmt.Println("Voer offer engine codes in waartegen gespeeld zal worden (één per regel, '.' om te stoppen):")
 		for scanner.Scan() {
 			input := strings.TrimSpace(scanner.Text())
 			if input == "." || input == "" {
@@ -474,12 +479,14 @@ func main() {
 			if end > len(inputEngines) {
 				end = len(inputEngines)
 			}
-			wg.Add(1)
-			go func(threadStart, threadEnd int) {
-				defer wg.Done()
-				batch := inputEngines[threadStart:threadEnd]
-				evaluateBatch(batch, offerEngines, resultChan, &progressComparisons)
-			}(start, end)
+			if start < end {
+				wg.Add(1)
+				go func(threadStart, threadEnd int) {
+					defer wg.Done()
+					batch := inputEngines[threadStart:threadEnd]
+					evaluateBatch(batch, offerEngines, resultChan, &progressComparisons)
+				}(start, end)
+			}
 		}
 
 		// Sluit kanaal na afronding
